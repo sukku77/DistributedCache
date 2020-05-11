@@ -1,0 +1,22 @@
+Design considerations:
+1. Cache algorithm: LRU cache by implementing the Hashtable with double linked list to optimise the performane of get operation with O(1)
+
+2. Design flow: 
+2.1 All the input requests should go receive by EventPriorityQueue instead of ThreadPool objects directly
+2.2 Listener should poll the queue records in batch, and then forward the requests to ThreadPool executor 
+2.3 Processes should receive the requests and update/read the cache objects and callback listener to response back
+
+3. Cache Design access flow:
+3.1 I prefer cache write back approach. Where in any updates will first persist in DB and acknolwedge it immediately, without waiting to update cache
+3.2 To maintain the consistency between cache and DB data, when ever the user request for the new object that is saved in DB, that moment will cater the request one time from the DB directly and update the cache object.
+
+4. Fault tolerant:
+4.1 Push each get/delete/post requests as async log events(which maintain like timestamp, method operation, key_value_object)
+4.2 By this approach, Even if server is down, we can reconstruct the cache by parsing the log file easily
+
+5. Availability:
+5.1 master , slave model to build to receive all requests to master only
+5.2 If master is down, slave nodes will act as master and serve the requests(Without master slave pattern, latency will be more to sync the cache objects everytime)
+
+6. Cache policy:
+Validity/Retention of cache objects depends on the size of the objects
